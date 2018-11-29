@@ -220,6 +220,29 @@ const getPermitError = (res, permit) => {
 };
 
 /**
+ * @function handleXmlResponse - parse and handle initial paygov response
+ * @param {Object} xmlResponse - pay.gov response
+ * @param {Object} permit - permit object of recently created object
+ * @param {Object} res - http response
+ */
+const handleXmlResponse = (xmlResponse, permit, res) => {
+  return new Promise((resolve, reject) => {
+    xml2jsParse(xmlResponse, function (err, result) {
+      if (!err) {
+        const token = paygov.getToken(result);
+        updatePermitWithToken(res, permit, token)
+          .catch(error => {
+            logger.error(`ERROR: ServerError: Pay.gov- ${error}`);
+            const paygovError = paygov.getResponseError('startOnlineCollection', result);
+            return updatePermitWithError(res, permit, paygovError);
+          });
+      }
+      reject(err);
+    });
+  });
+};
+
+/**
  * @function create - API function to create permit application
  * @param {Object} req - http request
  * @param {Object} res - http response
@@ -245,23 +268,7 @@ christmasTree.create = (req, res) => {
             const xmlData = paygov.getXmlForToken(forest.forestAbbr, forest.possFinancialId, permit);
             postPayGov(xmlData)
               .then(xmlResponse => {
-                xml2jsParse(xmlResponse, function(err, result) {
-                  if (!err) {
-                    try {
-                      const token = paygov.getToken(result);
-                      return updatePermitWithToken(res, permit, token);
-                    } catch (error) {
-                      try {
-                        logger.error(`ERROR: ServerError: Pay.gov- ${error}`);
-                        const paygovError = paygov.getResponseError('startOnlineCollection', result);
-                        return updatePermitWithError(res, permit, paygovError);
-                      } catch (faultError) {
-                        logger.error(`ERROR: ServerError: Pay.gov- FaultError: ${faultError}`);
-                        throwError(faultError);
-                      }
-                    }
-                  }
-                });
+                handleXmlResponse(xmlResponse, permit, res);
               })
               .catch(error => {
                 util.handleErrorResponse(error, res);
