@@ -7,13 +7,14 @@
 
 const winston = require('winston');
 
-winston.remove(winston.transports.Console);
-winston.add(winston.transports.Console, { 
-  json: true, 
-  colorize: true,
-  timestamp: true
-} );
 
-const logger = winston;
+//winston.remove(winston.transports.Console);
+const logger = winston.createLogger({
+  transports: [
+    new winston.transports.Console(),
+  ],
+  format: winston.format.simple(),
+});
+
 
 module.exports = logger;

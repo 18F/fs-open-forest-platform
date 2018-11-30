@@ -19,6 +19,7 @@ const express = require('express');
 const helmet = require('helmet');
 const session = require('cookie-session');
 const moment = require('moment');
+const winston = require('winston');
 
 const passportConfig = require('./auth/passport-config.es6');
 const router = require('./routers/router.es6');
@@ -65,15 +66,17 @@ expressWinston.requestWhitelist = ['url',
 if (logger.levels[logger.level] >= 2) {
   app.use(expressWinston.logger({
     transports: [
-      new logger.transports.Console(loggerParams)
+      new winston.transports.Console(loggerParams)
     ],
+    format: winston.format.simple(),
     bodyWhitelist: ['forestID', 'region', 'forest', 'type']
   }));
 }
 
 app.use(expressWinston.errorLogger({
+  format: winston.format.simple(),
   transports: [
-    new logger.transports.Console(loggerParams)
+    new winston.transports.Console(loggerParams)
   ]
 }));
 
