@@ -33,29 +33,21 @@ paygov.createToken = (permitId) => {
 };
 
 /**
- * @function createSuccessUrl - create success url for paygov request
+ * @function createReturnUrl - create success url for paygov request
  * @param {string} forestAbbr - forest abbreviation
  * @param {string} permitId - permit id
+ * @param {string} cancel - whether you want to create a cancel url
  * @return {string} - success URL for payGov
  */
-paygov.createSuccessUrl = (forestAbbr, permitId) => {
+paygov.createReturnUrl = (forestAbbr, permitId, cancel) => {
   const token = paygov.createToken(permitId);
+  let cancelCondition = '';
+  if(cancel){
+    cancelCondition = 'cancel=true&';
+  }
   return `${
     vcapConstants.INTAKE_CLIENT_BASE_URL
-  }/christmas-trees/forests/${forestAbbr}/applications/permits/${permitId}?t=${token}`;
-};
-
-/**
- * @function createCancelUrl - create cancel url for paygov request
- * @param {string} forestAbbr - forest abbreviation
- * @param {string} permitId - permit id
- * @return {string} - cancel URL for payGov
- */
-paygov.createCancelUrl = (forestAbbr, permitId) => {
-  const token = paygov.createToken(permitId);
-  return `${
-    vcapConstants.INTAKE_CLIENT_BASE_URL
-  }/christmas-trees/forests/${forestAbbr}/applications/${permitId}?cancel=true&t=${token}`;
+  }/christmas-trees/forests/${forestAbbr}/applications/permits/${permitId}?${cancelCondition}t=${token}`;
 };
 
 /**
@@ -66,20 +58,10 @@ paygov.createCancelUrl = (forestAbbr, permitId) => {
  * @return {string} - XML for payGov startOnlineCollection request
  */
 paygov.getXmlForToken = (forestAbbr, possFinancialId, permit) => {
+  
   const tcsAppID = vcapConstants.PAY_GOV_APP_ID;
-  let url_success = '';
-  try {
-    url_success = paygov.createSuccessUrl(forestAbbr, permit.permitId);
-  } catch (e) {
-    logger.error('problem creating success url for permit ' + permit.id, e);
-  }
-
-  let url_cancel;
-  try {
-    url_cancel = paygov.createCancelUrl(forestAbbr, permit.permitId);
-  } catch (e) {
-    logger.error('problem creating success url for permit ' + permit.id, e);
-  }
+  const urlSuccess = paygov.createSuccessUrl(forestAbbr, permit.permitId, false);
+  const urlCancel = paygov.createCancelUrl(forestAbbr, permit.permitId, true);
 
   const xmlTemplate = [
     {
@@ -116,10 +98,10 @@ paygov.getXmlForToken = (forestAbbr, possFinancialId, permit) => {
                       language: 'EN'
                     },
                     {
-                      url_success: url_success
+                      url_success: urlSuccess
                     },
                     {
-                      url_cancel: url_cancel
+                      url_cancel: urlCancel
                     },
                     {
                       account_holder_name: permit.firstName + ' ' + permit.lastName
@@ -234,9 +216,14 @@ paygov.getResponseError = (requestType, result) => {
  * @return {string} - paygov tracking id 
  */
 paygov.getTrackingId = result => {
-  const completeOnlineCollectionResponse =
-    result['S:Envelope']['S:Body'][0]['ns2:completeOnlineCollectionResponse'][0]['completeOnlineCollectionResponse'][0];
-  return completeOnlineCollectionResponse.paygov_tracking_id[0];
+  return new Promise((resolve, reject) => {
+    const completeOnlineCollectionResponse =
+      result['S:Envelope']['S:Body'][0]['ns2:completeOnlineCollectionResponse'][0]['completeOnlineCollectionResponse'][0];
+    if (typeof (completeOnlineCollectionResponse) == 'undefined') {
+      reject();
+    }
+    resolve(completeOnlineCollectionResponse.paygov_tracking_id[0]);
+  });
 };
 
 module.exports = paygov;

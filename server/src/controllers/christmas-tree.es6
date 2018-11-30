@@ -220,29 +220,6 @@ const getPermitError = (res, permit) => {
 };
 
 /**
- * @function handleXmlResponse - parse and handle initial paygov response
- * @param {Object} xmlResponse - pay.gov response
- * @param {Object} permit - permit object of recently created object
- * @param {Object} res - http response
- */
-const handleXmlResponse = (xmlResponse, permit, res) => {
-  return new Promise((resolve, reject) => {
-    xml2jsParse(xmlResponse, function (err, result) {
-      if (!err) {
-        const token = paygov.getToken(result);
-        updatePermitWithToken(res, permit, token)
-          .catch(error => {
-            logger.error(`ERROR: ServerError: Pay.gov- ${error}`);
-            const paygovError = paygov.getResponseError('startOnlineCollection', result);
-            return updatePermitWithError(res, permit, paygovError);
-          });
-      }
-      reject(err);
-    });
-  });
-};
-
-/**
  * @function create - API function to create permit application
  * @param {Object} req - http request
  * @param {Object} res - http response
@@ -268,8 +245,21 @@ christmasTree.create = (req, res) => {
             const xmlData = paygov.getXmlForToken(forest.forestAbbr, forest.possFinancialId, permit);
             postPayGov(xmlData)
               .then(xmlResponse => {
-                handleXmlResponse(xmlResponse, permit, res);
-              })
+                xml2jsParse(xmlResponse, function(err, result) {
+                  if (err) {
+                    reject(err)
+                  }
+                  paygov.geToken(result)
+                    .then(token => updatePermitWithToken(res, permit, token))
+                    .catch(error => {
+                      logger.error(`ERROR: ServerError: Pay.gov- ${error}`);
+                      paygov.getResponseError('startOnlineCollection', result)
+                        .then(paygovError => updatePermitWithError(res, permit, paygovError))
+                        .catch(faultError =>{
+                          logger.error(`ERROR: ServerError: Pay.gov- FaultError: ${faultError}`);
+                        })
+                    })
+                })
               .catch(error => {
                 util.handleErrorResponse(error, res);
               });
@@ -277,7 +267,6 @@ christmasTree.create = (req, res) => {
           .catch(error => {
             util.handleErrorResponse(error, res);
           });
-      }
     })
     .catch(error => {
       return res.status(400).json({
@@ -362,17 +351,12 @@ const parseXMLFromPayGov = (res, xmlResponse, permit) => {
       if (err) {
         reject(err);
       } else {
-        try {
-          const paygovTrackingId = paygov.getTrackingId(result);
-          resolve(paygovTrackingId);
-        } catch (error) {
-          try {
+        paygov.getTrackingId(result)
+          .then(paygovTrackingId => resolve(paygovTrackingId))
+          .catch(() => {
             const paygovError = paygov.getResponseError('completeOnlineCollection', result);
             return updatePermitWithError(res, permit, paygovError);
-          } catch (faultError) {
-            reject(faultError);
-          }
-        }
+          });
       }
     });
   });
