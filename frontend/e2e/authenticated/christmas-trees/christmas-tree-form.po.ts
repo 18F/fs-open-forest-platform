@@ -67,6 +67,7 @@ export class ChristmasTreeForm {
     element(by.css('.primary-permit-holder-first-name')).sendKeys('Sarah');
     element(by.css('.primary-permit-holder-last-name')).sendKeys('Bell');
     element(by.id('email')).sendKeys('msdf@noemail.com');
+    element(by.id('email-verify')).sendKeys('msdf@noemail.com');
     element(by.id('quantity')).sendKeys('2');
   }
 
@@ -83,6 +84,7 @@ export class ChristmasTreeForm {
     element(by.css('.primary-permit-holder-first-name')).sendKeys(first);
     element(by.css('.primary-permit-holder-last-name')).sendKeys(last);
     element(by.id('email')).sendKeys('msdf@noemail.com');
+    element(by.id('email-verify')).sendKeys('msdf@noemail.com');
     element(by.id('quantity')).sendKeys('2');
     this.submit().click();
     this.rulesAccepted().click();

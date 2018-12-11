@@ -5,5 +5,11 @@
     [attr.aria-labelledby]="afs.labelledBy(applicantInfo.controls.emailAddress, 'email-label email-hint-text', 'email-error')"
     [attr.aria-invalid]="afs.hasError(applicantInfo.controls.emailAddress)"
   />
+
+    <span id="email-verify-hint-text" class="help-text usa-form-hint email-verify">Please verify your email address.</span>
+    <input id="email-verify" type="email" pattern="(^[a-zA-Z0-9.!#$%&’*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$)"
+      formControlName="emailAddress" aria-required="true" [attr.aria-labelledby]="afs.labelledBy(applicantInfo.controls.emailAddressVerify, 'email-verify-label email-verify-hint-text', 'email-error')"
+      [attr.aria-invalid]="afs.hasError(applicantInfo.controls.emailAddress)" />
+  
   <app-error-message fieldId="email-error" name="Email address" [control]="applicantInfo.controls.emailAddress"></app-error-message>
 </ng-container>
