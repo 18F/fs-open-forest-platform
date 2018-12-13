@@ -15,7 +15,7 @@ const expect = chai.expect;
 let permitId;
 let today = moment(new Date()).format('YYYY-MM-DD');
 
-describe('christmas tree admin controller tests', () => {
+describe.only('christmas tree admin controller tests', () => {
   it('GET should return a 200 response for the given admin report parameters forest, start and end date', done => {
     request(server)
       .get(`/admin/christmas-trees/permits/1/${today}/${today}`)
