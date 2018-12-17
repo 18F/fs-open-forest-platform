@@ -144,15 +144,15 @@ christmasTreeAdmin.getPermitReport = (req, res) => {
         });
       } else {
         treesDb.christmasTreesForests
-        .findOne({
-          where: {
-            id: requestedPermit.forestId
-          }
-        })
-        .then(forest => {
-          requestedPermit.timezone = forest.timezone;
-          return returnPermitsReport([requestedPermit], res);
-        })
+          .findOne({
+            where: {
+              id: requestedPermit.forestId
+            }
+          })
+          .then(forest => {
+            requestedPermit.timezone = forest.timezone;
+            return returnPermitsReport([requestedPermit], res);
+          });
       }
     })
     .catch(error => {
