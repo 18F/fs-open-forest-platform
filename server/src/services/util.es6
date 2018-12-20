@@ -434,7 +434,8 @@ util.logControllerAction = (req, controller, applicationOrPermit) => {
     role = 'PUBLIC';
     permitID = applicationOrPermit.permitId;
   } else {
-    userID = req.user.email;
+    const user = req.user;
+    userID = user.email;
     role = util.getUserRole(req);
     permitID = applicationOrPermit.applicationId;
   }

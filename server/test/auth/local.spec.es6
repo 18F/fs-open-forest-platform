@@ -1,9 +1,7 @@
 /* eslint-disable no-unused-expressions */
 
-const chai = require('chai');
+const expect = require('chai').expect;
 const sinon = require('sinon');
-
-const expect = chai.expect;
 
 const util = require('../../src/services/util.es6');
 const localAuth = require('../../src/auth/local.es6');

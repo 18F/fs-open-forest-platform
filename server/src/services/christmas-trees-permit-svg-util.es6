@@ -1,4 +1,5 @@
-/* eslint no-param-reassign: ["error", { "props": false }] */
+/* eslint-disable no-param-reassign */
+
 
 /**
  * svg utility service for christmas trees
@@ -14,7 +15,7 @@ const moment = require('moment-timezone');
 const fs = require('fs-extra');
 const svg2png = require('svg2png');
 const zpad = require('zpad');
-const Markdown = require('markdown');
+const markdown = require('markdown').markdown;
 const vcapConstants = require('../vcap-constants.es6');
 
 const christmasTreesPermitSvgUtil = {};
@@ -139,7 +140,7 @@ christmasTreesPermitSvgUtil.generatePng = svgBuffer => new Promise((resolve) => 
 christmasTreesPermitSvgUtil.generateRulesHtml = (createHtmlBody, permit) => new Promise((resolve, reject) => {
   const rulesMarkdown = christmasTreesPermitSvgUtil.getRulesMarkdown(permit.christmasTreesForest.forestAbbr);
   if (rulesMarkdown) {
-    let rulesHtml = Markdown.markdown.toHTML(rulesMarkdown);
+    let rulesHtml = markdown.toHTML(rulesMarkdown);
     rulesHtml = christmasTreesPermitSvgUtil.processRulesText(rulesHtml, permit);
     resolve(
       christmasTreesPermitSvgUtil.createRulesHtmlPage(createHtmlBody, rulesHtml, permit.christmasTreesForest)
@@ -193,13 +194,13 @@ christmasTreesPermitSvgUtil.createRulesHtmlPage = (createHtmlBody, rules, forest
       forest.forestName
     } under the below rules and guidelines. Failure to follow these rules and guidelines may result in a fine<br/><br/>`;
   const regex = new RegExp('"/assets/', 'g');
-  const rulesWithUrl = rules.replace(regex, `"${vcapConstants.INTAKE_CLIENT_BASE_URL}/assets/`);
+  rules = rules.replace(regex, `"${vcapConstants.INTAKE_CLIENT_BASE_URL}/assets/`);
 
-  const rulesWithMiddleAlign = rulesWithUrl.replace(
+  rules = rules.replace(
     'alt="rules icon"',
     'alt="rules icon" style="width: 50px; vertical-align: middle; padding-right: 1rem;"'
   );
-  rulesHtml += `${rulesWithMiddleAlign}</div>`;
+  rulesHtml += `${rules}</div>`;
   if (createHtmlBody) {
     rulesHtml += '</body></html>';
   }
@@ -217,11 +218,10 @@ christmasTreesPermitSvgUtil.processRulesText = (rulesHtml, permit) => {
   for (const key in forest) {
     if (Object.prototype.hasOwnProperty.call(forest, key)) {
       const textToReplace = `{{${key}}}`;
-      const rulesHtmlWithForest = rulesHtml.replace(textToReplace, forest[key]);
+      rulesHtml = rulesHtml.replace(textToReplace, forest[key]);
       if (key === 'cuttingAreas' && Object.keys(forest.cuttingAreas).length > 0) {
-        return christmasTreesPermitSvgUtil.parseCuttingAreaDates(rulesHtmlWithForest, forest);
+        rulesHtml = christmasTreesPermitSvgUtil.parseCuttingAreaDates(rulesHtml, forest);
       }
-      return rulesHtmlWithForest;
     }
   }
   return rulesHtml;
@@ -235,12 +235,11 @@ christmasTreesPermitSvgUtil.processRulesText = (rulesHtml, permit) => {
  */
 christmasTreesPermitSvgUtil.parseCuttingAreaDates = (rulesText, forest) => {
   const cuttingAreaKeys = ['elkCreek', 'redFeatherLakes', 'sulphur', 'canyonLakes'];
-  let rulesTextWithDate = rulesText;
   for (const key of cuttingAreaKeys) {
     const areaKey = key.toUpperCase();
     const cuttingAreas = forest.cuttingAreas;
     if (cuttingAreas && cuttingAreas[areaKey] && cuttingAreas[areaKey].startDate) {
-      rulesTextWithDate = rulesText.replace(
+      rulesText = rulesText.replace(
         `{{${key}Date}}`,
         christmasTreesPermitSvgUtil.formatCuttingAreaDate(
           forest.timezone,
@@ -250,7 +249,7 @@ christmasTreesPermitSvgUtil.parseCuttingAreaDates = (rulesText, forest) => {
       );
     }
   }
-  return rulesTextWithDate;
+  return rulesText;
 };
 
 /**

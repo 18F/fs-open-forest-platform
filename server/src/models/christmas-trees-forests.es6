@@ -1,4 +1,5 @@
-/* eslint no-param-reassign: ["error", { "props": false }] */
+/* eslint-disable no-param-reassign */
+
 
 /**
  * Module for christmas tree forests model

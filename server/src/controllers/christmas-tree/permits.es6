@@ -1,6 +1,7 @@
-/* eslint no-param-reassign: ["error", { "props": false }] */
+
+
 /**
- * Module for christmas tree public API to create permits and manage transactions
+ * Module for chrismtmas tree public API to create permits and manage transactions
  * @module controllers/christmas-tree/permits
  */
 
@@ -95,6 +96,25 @@ const updatePermitWithToken = (res, permit, token) => {
 };
 
 /**
+ * @function updatePermitWithError - Private function to update permit's status to error
+ * @param {Object} res - http response
+ * @param {Object} permit - permit object from database
+ * @param {string} paygovError - error from payGov
+ * @return {Object} - http response
+ */
+const updatePermitWithError = (res, permit, paygovError) => updatePermit(permit, {
+  status: 'Error',
+  paygovError: JSON.stringify(paygovError)
+}).then((updatedPermit) => {
+  logger.error(
+    `ERROR: ServerError: ${updatedPermit.emailAddress} \
+modified ${updatedPermit.permitId} encountered an error \
+at pay.gov ${updatedPermit.paygovError}`
+  );
+  return getPermitError(res, updatedPermit);
+});
+
+/**
  * @function getPermitError - Private function to error objects from the permit's errors
  * @param {Object} res - http response
  * @param {Object} permit - permit object from database
@@ -113,45 +133,6 @@ const getPermitError = (res, permit) => {
     ]
   });
 };
-
-/**
- * @function updatePermit - Private function to update permit in database
- * @param {Object} permit - permit object from database
- * @param {Object} updateObject - updated permit object
- * @return {Object} - saved permit
- */
-const updatePermit = (permit, updateObject) => new Promise((resolve, reject) => {
-  permit
-    .update(updateObject)
-    .then((updatedPermit) => {
-      logger.info(
-        `PermitID ${updatedPermit.permitId} updated at ${updatedPermit.modifiedAt} by ${permit.emailAddress} `
-      );
-      resolve(updatedPermit);
-    })
-    .catch((error) => {
-      reject(error);
-    });
-});
-
-/**
- * @function updatePermitWithError - Private function to update permit's status to error
- * @param {Object} res - http response
- * @param {Object} permit - permit object from database
- * @param {string} paygovError - error from payGov
- * @return {Object} - http response
- */
-const updatePermitWithError = (res, permit, paygovError) => updatePermit(permit, {
-  status: 'Error',
-  paygovError: JSON.stringify(paygovError)
-}).then((updatedPermit) => {
-  logger.error(
-    `ERROR: ServerError: ${updatedPermit.emailAddress} \
-modified ${updatedPermit.permitId} encountered an error \
-at pay.gov ${updatedPermit.paygovError}`
-  );
-  return getPermitError(res, updatedPermit);
-});
 
 /**
  * @function recordPayGovError - Private function to error objects from the permit's errors
@@ -268,6 +249,26 @@ const sendEmail = (savedPermit, permitPng, rulesHtml, rulesText) => {
 const returnSavedPermit = (res, savedPermit) => res.status(200).send(permitResult(savedPermit));
 
 /**
+ * @function updatePermit - Private function to update permit in database
+ * @param {Object} permit - permit object from database
+ * @param {Object} updateObject - updated permit object
+ * @return {Object} - saved permit
+ */
+const updatePermit = (permit, updateObject) => new Promise((resolve, reject) => {
+  permit
+    .update(updateObject)
+    .then((updatedPermit) => {
+      logger.info(
+        `PermitID ${updatedPermit.permitId} updated at ${updatedPermit.modifiedAt} by ${permit.emailAddress} `
+      );
+      resolve(updatedPermit);
+    })
+    .catch((error) => {
+      reject(error);
+    });
+});
+
+/**
  * @function parseXMLFromPayGov - Private function to parse the returned XML from payGov
  * @param {Object} res - http response
  * @param {string} payGovXmlRes - xml response from payGov api call
@@ -344,12 +345,14 @@ christmasTreePermits.getOnePermit = (req, res) => {
         jwt.verify(token, vcapConstants.PERMIT_SECRET, (err, decoded) => {
           if (decoded) {
             util.logControllerAction(req, 'christmasTreePermits.getOnePermit', permit);
-            return returnSavedPermit(res, permit);
+            returnSavedPermit(res, permit);
+          } else {
+            return res.status(404).send();
           }
-          return res.status(404).send();
         });
+      } else if (!permit) {
+        return res.status(404).send();
       }
-      return res.status(404).send();
     })
     .catch((error) => {
       util.handleErrorResponse(error, res, 'getOnePermit#end');
@@ -423,13 +426,13 @@ const completePermitTransaction = (permit, res, req) => {
           resolve(christmasTreePermits.generateRulesAndEmail(updatedPermit));
         })
         .catch((processError) => {
-          const errorToSend = Object.assign(processError, { method: 'completePermitTransaction#process' });
-          reject(errorToSend);
+          processError.method = 'completePermitTransaction#process';
+          reject(processError);
         }))
       .catch((postError) => {
         if (postError && postError !== 'null') {
-          const errorToSend = Object.assign(postError, { method: 'completePermitTransaction#end' });
-          reject(errorToSend);
+          postError.method = 'completePermitTransaction#end';
+          reject(postError);
         }
       });
   });
