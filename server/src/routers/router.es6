@@ -20,7 +20,7 @@ router.options('*', middleware.setCorsHeaders, (_req, res) => {
 });
 
 /** Plug in subroutes. */
-router.use('/auth', middleware.setCorsHeaders, authRouter);
+router.use('/auth', authRouter);
 router.use('/permits/applications/special-uses', middleware.setCorsHeaders, middleware.checkPermissions, specialUseRouter);
 router.use('/forests', middleware.setCorsHeaders, christmasTreeRouter);
 router.use('/admin/christmas-trees', middleware.setCorsHeaders, middleware.checkAdminPermissions, christmasTreeAdminRouter);

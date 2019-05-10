@@ -12,10 +12,10 @@ const middleware = require('../services/middleware.es6');
 const router = express.Router();
 
 /* GET the universal passport user. */
-router.get('/user', middleware.checkPermissions, passportConfig.getPassportUser);
+router.get('/user', middleware.setCorsHeaders, middleware.checkPermissions, passportConfig.getPassportUser);
 
 /* Universal passport logout. */
-router.get('/logout', passportConfig.logout);
+router.get('/logout', middleware.setCorsHeaders, passportConfig.logout);
 
 /* Public user authentication */
 router.get('/public/login', passport.authenticate('public'));
